@@ -1,36 +1,39 @@
+const fs = require('node:fs');
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 
 
-var noteRouter = require('./routes/note');
-
 var app = express();
 
 // view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', noteRouter);
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+/* GET home page. */
+app.get('/', function(req, res) {
+  res.sendFile(path.join(__dirname+'/public/index.html'))
 });
+app.get('/notes', function(req, res) {
+    res.sendFile(path.join(__dirname+'/public/notes.html'))
+  });
+  
+  app.post('/api/note/add', function(req, res) {
+    res.json(({added:true}))
+  });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+  app.get('/api/note/list', function(req, res) {
+fs.readFile(path.join(__dirname+'/db/db.json'), 'utf8', (err, data) => {
+  if (err) {
+    console.error(err);
+    return;
+  }
+  res.json(({items:JSON.parse(data)}))
 });
+  });
+
 
 module.exports = app;
