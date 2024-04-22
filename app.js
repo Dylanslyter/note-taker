@@ -25,14 +25,14 @@ app.get('/notes', function(req, res) {
   app.post('/api/note/add', function(req, res) {
     // Generate a unique ID for the new note
     const id = uuidv4();
-    
+
     // Create a new note object with the provided data and the generated ID
     const newNote = {
       id: id,
       title: req.body.title,
       text: req.body.text
     };
-  
+
     // Read existing notes from the JSON file
     fs.readFile(dbFilePath, 'utf8', (err, data) => {
       if (err) {
@@ -40,13 +40,13 @@ app.get('/notes', function(req, res) {
         res.status(500).json({ error: 'Internal Server Error' });
         return;
       }
-  
+
       // Parse the existing notes data
       let notes = JSON.parse(data);
-  
+
       // Add the new note to the array of notes
       notes.push(newNote);
-  
+
       // Write the updated notes back to the JSON file
       fs.writeFile(dbFilePath, JSON.stringify(notes), (err) => {
         if (err) {
@@ -54,7 +54,7 @@ app.get('/notes', function(req, res) {
           res.status(500).json({ error: 'Internal Server Error' });
           return;
         }
-  
+
         // Respond with a success message
         res.json({ added: true, id: id });
       });
@@ -70,6 +70,32 @@ fs.readFile(path.join(__dirname+'/db/db.json'), 'utf8', (err, data) => {
   res.json(({items:JSON.parse(data)}))
 });
   });
+
+
+app.delete('/api/note/remove/:id', function(req, res) {
+  const noteId = req.params.id;
+
+  fs.readFile(dbFilePath, 'utf8', (err, data) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    let notes = JSON.parse(data);
+    const updatedNotes = notes.filter((note) => note.id !== noteId);
+
+    fs.writeFile(dbFilePath, JSON.stringify(updatedNotes), (err) => {
+      if (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal Server Error' });
+        return;
+      }
+
+      res.json({ deleted: true, id: noteId });
+    });
+  });
+});
 
 
 module.exports = app;
