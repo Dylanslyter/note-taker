@@ -1,3 +1,4 @@
+const { v4: uuidv4 } = require('uuid');
 const fs = require('node:fs');
 var createError = require('http-errors');
 var express = require('express');
@@ -20,9 +21,44 @@ app.get('/', function(req, res) {
 app.get('/notes', function(req, res) {
     res.sendFile(path.join(__dirname+'/public/notes.html'))
   });
-  
+  const dbFilePath = path.join(__dirname, 'db', 'db.json');
   app.post('/api/note/add', function(req, res) {
-    res.json(({added:true}))
+    // Generate a unique ID for the new note
+    const id = uuidv4();
+    
+    // Create a new note object with the provided data and the generated ID
+    const newNote = {
+      id: id,
+      title: req.body.title,
+      text: req.body.text
+    };
+  
+    // Read existing notes from the JSON file
+    fs.readFile(dbFilePath, 'utf8', (err, data) => {
+      if (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal Server Error' });
+        return;
+      }
+  
+      // Parse the existing notes data
+      let notes = JSON.parse(data);
+  
+      // Add the new note to the array of notes
+      notes.push(newNote);
+  
+      // Write the updated notes back to the JSON file
+      fs.writeFile(dbFilePath, JSON.stringify(notes), (err) => {
+        if (err) {
+          console.error(err);
+          res.status(500).json({ error: 'Internal Server Error' });
+          return;
+        }
+  
+        // Respond with a success message
+        res.json({ added: true, id: id });
+      });
+    });
   });
 
   app.get('/api/note/list', function(req, res) {
